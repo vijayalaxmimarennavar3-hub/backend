@@ -1,23 +1,36 @@
+// src/server.js
+
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
-import {
-  registerForEvent,
-  myRegistrations,
-  cancelRegistration,
-  updateStatus,
-  getEventRegistrations,
-} from "../controllers/registration.controller.js";
+import cors from "cors";
 
-import { protect, admin } from "../middleware/authMiddleware.js";
+import authRoutes from "./routes/auth.routes.js";
+import eventRoutes from "./routes/event.routes.js"
+import collegeRoutes from "./routes/college.routes.js";
+import registrationRoutes from "./routes/registration.routes.js"
 
-const router = express.Router();
 
-/* Student Routes */
-router.post("/", protect, registerForEvent);
-router.get("/me", protect, myRegistrations);
-router.delete("/:id", protect, cancelRegistration);
+const app = express();
 
-/* Admin Routes */
-router.patch("/:id/status", protect, admin, updateStatus);
-router.get("/event/:eventId", protect, admin, getEventRegistrations);
+app.use(
+  cors()
+);
 
-export default router;
+app.use(express.json());
+
+app.get("/health", (req, res) => {
+  res.json({ status: "OK ALL WORKING FINE" });
+});
+
+app.use("/api/auth", authRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/colleges", collegeRoutes);
+app.use("/api/register", registrationRoutes);
+
+const PORT = process.env.PORT || 5001;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
