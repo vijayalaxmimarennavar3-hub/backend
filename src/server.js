@@ -1,23 +1,72 @@
+// src/server.js
+
 import express from "express";
-import {
-  registerForEvent,
-  myRegistrations,
-  cancelRegistration,
-  updateStatus,
-  getEventRegistrations,
-} from "../controllers/registration.controller.js";
+import cors from "cors";
+import dotenv from "dotenv";
 
-import { protect, admin } from "../middleware/authMiddleware.js";
+/* Route Imports */
+import authRoutes from "./routes/auth.routes.js";
+import eventRoutes from "./routes/event.routes.js";
+import registrationRoutes from "./routes/registration.routes.js";
 
-const router = express.Router();
+/* Load Environment Variables */
+dotenv.config();
 
-/* Student Routes */
-router.post("/", protect, registerForEvent);
-router.get("/me", protect, myRegistrations);
-router.delete("/:id", protect, cancelRegistration);
+const app = express();
 
-/* Admin Routes */
-router.patch("/:id/status", protect, admin, updateStatus);
-router.get("/event/:eventId", protect, admin, getEventRegistrations);
+/* ================================
+   Middleware
+================================ */
 
-export default router;
+app.use(cors());
+app.use(express.json());
+
+/* ================================
+   API Routes
+================================ */
+
+app.use("/api/auth", authRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/registrations", registrationRoutes);
+
+/* ================================
+   Root Route
+================================ */
+
+app.get("/", (req, res) => {
+  res.send("🎉 Event Management API Running...");
+});
+
+/* ================================
+   404 Handler
+================================ */
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
+
+/* ================================
+   Global Error Handler
+================================ */
+
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
+});
+
+/* ================================
+   Server Start
+================================ */
+
+const PORT = process.env.PORT || 5001;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
