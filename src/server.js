@@ -1,5 +1,6 @@
 // src/server.js
 
+<<<<<<< HEAD
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -64,9 +65,43 @@ app.use((err, req, res, next) => {
 /* ================================
    Server Start
 ================================ */
+=======
+import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
+import cors from "cors";
+
+import authRoutes from "./routes/auth.routes.js";
+import eventRoutes from "./routes/event.routes.js"
+import collegeRoutes from "./routes/college.routes.js";
+import registrationRoutes from "./routes/registration.routes.js"
+
+
+const app = express();
+
+app.use(
+  cors()
+);
+
+app.use(express.json());
+
+app.get("/health", (req, res) => {
+  res.json({ status: "OK ALL WORKING FINE" });
+});
+
+app.use("/api/auth", authRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/colleges", collegeRoutes);
+app.use("/api/register", registrationRoutes);
+>>>>>>> b5812da1e8daa2055d98baae5e883cb99ca3ebf8
 
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
+<<<<<<< HEAD
   console.log(`🚀 Server running on port ${PORT}`);
+=======
+  console.log(`Server running on port ${PORT}`);
+>>>>>>> b5812da1e8daa2055d98baae5e883cb99ca3ebf8
 });
