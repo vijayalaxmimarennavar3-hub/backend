@@ -59,12 +59,8 @@ export const updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-
-<<<<<<< HEAD
-=======
     //STATUS VALIDATION
->>>>>>> b5812da1e8daa2055d98baae5e883cb99ca3ebf8
-    const allowedStatus = ["pending", "approved", "rejected"];
+  const allowedStatus = ["pending", "approved", "rejected"];
 
     if (!allowedStatus.includes(status)) {
       return res.status(400).json({
