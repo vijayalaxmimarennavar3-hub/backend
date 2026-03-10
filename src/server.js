@@ -1,6 +1,4 @@
 // src/server.js
-
-<<<<<<< HEAD
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -35,7 +33,7 @@ app.use("/api/registrations", registrationRoutes);
 ================================ */
 
 app.get("/", (req, res) => {
-  res.send("🎉 Event Management API Running...");
+  res.send(" Event Management API Running...");
 });
 
 /* ================================
@@ -65,7 +63,6 @@ app.use((err, req, res, next) => {
 /* ================================
    Server Start
 ================================ */
-=======
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -99,9 +96,6 @@ app.use("/api/register", registrationRoutes);
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
-<<<<<<< HEAD
-  console.log(`🚀 Server running on port ${PORT}`);
-=======
+  console.log(`🚀 Server running on port ${PORT}`)
   console.log(`Server running on port ${PORT}`);
->>>>>>> b5812da1e8daa2055d98baae5e883cb99ca3ebf8
 });
