@@ -1,7 +1,7 @@
 // src/routes/registration.routes.js
 
 import express from "express";
-<<<<<<< HEAD
+
 import {
   registerForEvent,
   myRegistrations,
