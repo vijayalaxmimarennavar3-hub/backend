@@ -91,11 +91,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/colleges", collegeRoutes);
 app.use("/api/register", registrationRoutes);
->>>>>>> b5812da1e8daa2055d98baae5e883cb99ca3ebf8
 
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`)
+  console.log(` Server running on port ${PORT}`)
   console.log(`Server running on port ${PORT}`);
 });
