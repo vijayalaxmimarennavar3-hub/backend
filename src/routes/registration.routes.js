@@ -1,62 +1,83 @@
-// src/routes/registration.routes.js
-
 import express from "express";
 
 import {
   registerForEvent,
-  myRegistrations,
-  cancelRegistration,
-  updateStatus,
-  getEventRegistrations,
+  getMyRegistrations,
+  updateRegistrationStatus,
+  getEventParticipants,
+  getPlatformEvents,
+  deleteEvent
 } from "../controllers/registration.controller.js";
 
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-/* =========================
-   Student Routes
-   ========================= */
+/*
+  Student Registration
+  Endpoint: POST /api/registrations/event/:eventId
+*/
+router.post(
+  "/event/:eventId",
+  protect,
+  authorize("student"),
+  registerForEvent
+);
 
-router.post("/", protect, registerForEvent);
-router.get("/me", protect, myRegistrations);
-router.delete("/:id", protect, cancelRegistration);
+/*
+  Student View Registrations
+  Endpoint: GET /api/registrations/me
+*/
+router.get(
+  "/me",
+  protect,
+  authorize("student"),
+  getMyRegistrations
+);
 
-/* =========================
-   Admin Routes
-   ========================= */
+/*
+  Admin View Participants
+  Endpoint: GET /api/registrations/event/:eventId/participants
+*/
+router.get(
+  "/event/:eventId/participants",
+  protect,
+  authorize("college_admin", "super_admin"),
+  getEventParticipants
+);
 
+/*
+  Approve / Reject Registration
+  Endpoint: PATCH /api/registrations/:id/status
+*/
 router.patch(
   "/:id/status",
   protect,
   authorize("college_admin", "super_admin"),
-  updateStatus
+  updateRegistrationStatus
 );
 
+/*
+  Super Admin events-overview
+  Endpoint: GET /api/registrations/overview
+*/
 router.get(
-  "/event/:eventId",
+  "/overview", 
+  protect,
+  authorize("super_admin"),
+  getPlatformEvents
+);
+
+
+/*
+  College Admin delete event
+  Endpoint: GET /api/registrations/event/:eventId/delete
+*/
+router.delete(
+  "/event/:eventId/delete", 
   protect,
   authorize("college_admin", "super_admin"),
-  getEventRegistrations
+  deleteEvent
 );
-import * as registrationController from "../controllers/registration.controller.js";
-
-import { protect, authorize } from "../middlewares/auth.middleware.js";
-import { optionalProtect } from "../middlewares/optionalAuth.middleware.js";
-
-
-const router = express.Router();
-
-/* Student Routes */
-router.post("/", protect, registrationController.registerForEvent);
-router.get("/me", protect, registrationController.myRegistrations);
-
-router.delete("/:id", protect, registrationController.cancelRegistration);
-
-/* Admin Routes */
-router.patch("/status/:id", protect, authorize("college_admin", "super_admin"), registrationController.updateStatus);
-router.get("/event/:eventId", protect, authorize("college_admin", "super_admin"), registrationController.getEventRegistrations);
 
 export default router;
-
-  

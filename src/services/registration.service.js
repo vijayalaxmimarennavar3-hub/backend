@@ -1,45 +1,39 @@
-// src/services/registration.service.js
+import prisma from "../config/prisma.js";
 
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+export const registerForEventService = async (eventId, user) => {
 
-/* ==============================
-   Student Register for Event
-================================ */
-export const createRegistration = async (eventId, user) => {
+  if (user.role !== "student") {
+    throw new Error("Only students can register for events");
+  }
+
   const event = await prisma.event.findUnique({
-    where: { id: eventId },
+    where: { id: eventId }
   });
 
   if (!event) {
     throw new Error("Event not found");
   }
 
-  /* Only students can register */
-  if (user.role !== "student") {
-    throw new Error("Only students can register for events");
+  if (new Date(event.startDate) < new Date()) {
+    throw new Error("Event registration closed");
   }
 
-  /* Student can register only for:
-     - their college events
-     - global events
-  */
+  // scope validation
   if (
-    event.scope === "college" &&
+    event.scope === "COLLEGE" &&
     event.collegeId !== user.collegeId
   ) {
-    throw new Error(
-      "You can register only for events hosted by your college"
-    );
+    throw new Error("You can only register for events hosted by your college");
   }
 
-  /* Prevent duplicate registration */
-  const existing = await prisma.registration.findFirst({
+  const existing = await prisma.registration.findUnique({
     where: {
-      eventId,
-      userId: user.id,
-    },
+      eventId_userId: {
+        eventId,
+        userId: user.id
+      }
+    }
   });
 
   if (existing) {
@@ -49,125 +43,159 @@ export const createRegistration = async (eventId, user) => {
   return prisma.registration.create({
     data: {
       eventId,
-      userId: user.id,
-    },
+      userId: user.id
+    }
   });
 };
 
+export const getMyRegistrationsService = async (user) => {
 
-/* ==============================
-   Student: View My Registrations
-================================ */
-export const getMyRegistrations = async (userId) => {
   return prisma.registration.findMany({
-    where: { userId },
+    where: {
+      userId: user.id
+    },
     include: {
-      event: true,
+      event: {
+        include: {
+          college: true
+        }
+      }
     },
     orderBy: {
-      timestamp: "desc",
-    },
+      timestamp: "desc"
+    }
   });
+
 };
 
+export const getEventParticipantsService = async (eventId, admin) => {
 
-/* ==============================
-   Admin: Approve / Reject
-================================ */
-export const updateRegistrationStatus = async (id, status, user) => {
-  const registration = await prisma.registration.findUnique({
-    where: { id },
-    include: {
-      event: true,
-    },
-  });
-
-  if (!registration) {
-    throw new Error("Registration not found");
-  }
-
-  /* College Admin → only their college events */
-  if (user.role === "college_admin") {
-    if (registration.event.collegeId !== user.collegeId) {
-      throw new Error(
-        "You can manage only events from your college"
-      );
-    }
-  }
-
-  /* Super Admin → only events they created */
-  if (user.role === "super_admin") {
-    if (registration.event.createdBy !== user.id) {
-      throw new Error(
-        "You can manage only events created by you"
-      );
-    }
-  }
-
-  return prisma.registration.update({
-    where: { id },
-    data: { status },
-  });
-};
-
-
-/* ==============================
-   Admin: View Event Participants
-================================ */
-export const getEventRegistrations = async (eventId, user) => {
   const event = await prisma.event.findUnique({
-    where: { id: eventId },
+    where: { id: eventId }
   });
 
   if (!event) {
     throw new Error("Event not found");
   }
 
-  /* College Admin restriction */
-  if (user.role === "college_admin") {
-    if (event.collegeId !== user.collegeId) {
-      throw new Error("Access denied");
-    }
+  if (event.collegeId !== admin.collegeId) {
+    throw new Error("You can only manage events from your college");
   }
 
-  /* Super Admin restriction */
-  if (user.role === "super_admin") {
-    if (event.createdBy !== user.id) {
-      throw new Error("Access denied");
-    }
-  }
-
-  const registrations = await prisma.registration.findMany({
+  return prisma.registration.findMany({
     where: { eventId },
     include: {
-      user: true,
-    },
-    orderBy: {
-      timestamp: "desc",
-    },
+      user: true
+    }
   });
 
-  return {
-    totalParticipants: registrations.length,
-    participants: registrations,
-  };
 };
 
 
-/* ==============================
-   Cancel Registration
-================================ */
-export const deleteRegistration = async (id, userId, role) => {
+export const updateRegistrationStatusService = async (
+  registrationId,
+  status,
+  admin
+) => {
 
-  /* Only students cancel their own registrations */
-  if (role !== "student") {
-    throw new Error("Only students can cancel registrations");
+  const registration = await prisma.registration.findUnique({
+    where: { id: registrationId },
+    include: { event: true }
+  });
+
+  if (!registration) {
+    throw new Error("Registration not found");
   }
 
-  return prisma.registration.deleteMany({
-    where: {
-      id,
-      userId,
-    },
+  if (registration.event.collegeId !== admin.collegeId) {
+    throw new Error("You can only manage events from your college");
+  }
+
+  return prisma.registration.update({
+    where: { id: registrationId },
+    data: { status }
   });
+
+};
+
+export const getPlatformEventsService = async () => {
+
+  return prisma.event.findMany({
+    include: {
+      college: true,
+      creator: true,
+      _count: {
+        select: {
+          registrations: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+
+};
+
+//DELETE EVENT
+export const deleteEventService = async (eventId, user) => {
+
+  const event = await prisma.event.findUnique({
+    where: { id: eventId }
+  });
+
+  if (!event) {
+    throw new Error("Event not found");
+  }
+
+  if (user.role === "college_admin") {
+
+    if (event.collegeId !== user.collegeId) {
+      throw new Error("You can only manage events from your college");
+    }
+
+  } else if (user.role === "super_admin") {
+
+    if (event.createdBy !== user.id) {
+      throw new Error("You can only manage events you created");
+    }
+
+  }
+
+  return prisma.event.delete({
+    where: { id: eventId }
+  });
+
+};
+
+//UPDATE EVENT
+export const updateEventService = async (eventId, data, user) => {
+
+  const event = await prisma.event.findUnique({
+    where: { id: eventId }
+  });
+
+  if (!event) {
+    throw new Error("Event not found");
+  }
+
+  if (user.role === "college_admin") {
+
+    if (event.collegeId !== user.collegeId) {
+      throw new Error("You can only manage events from your college");
+    }
+
+  } else if (user.role === "super_admin") {
+
+    if (event.createdBy !== user.id) {
+      throw new Error("You can only manage events you created");
+    }
+
+  }
+
+  return prisma.event.update({
+    where: { id: eventId },
+    data
+  });
+
 };
